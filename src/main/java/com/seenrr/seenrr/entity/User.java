@@ -26,6 +26,12 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Column(name = "two_fa_secret")
+    private String twoFaSecret;
+
+    @Column(name = "is_two_fa_enabled")
+    private boolean isTwoFaEnabled;
+
     public User() {}
 
     public User(String username, String email, String password) {
@@ -82,6 +88,22 @@ public class User {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public String getTwoFaSecret() {
+        return twoFaSecret;
+    }
+    
+    public void setTwoFaSecret(String twoFaSecret) {
+        this.twoFaSecret = twoFaSecret;
+    }
+    
+    public boolean isTwoFaEnabled() {
+        return isTwoFaEnabled;
+    }
+    
+    public void setTwoFaEnabled(boolean twoFaEnabled) {
+        isTwoFaEnabled = twoFaEnabled;
     }
 
     @PrePersist
