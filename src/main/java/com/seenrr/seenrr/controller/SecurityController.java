@@ -1,7 +1,9 @@
 package com.seenrr.seenrr.controller;
 
+import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -10,199 +12,165 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.seenrr.seenrr.dto.ApiResponseDto;
+import com.seenrr.seenrr.dto.Login2FADto;
+import com.seenrr.seenrr.dto.LoginDto;
+import com.seenrr.seenrr.dto.PasswordResetDto;
+import com.seenrr.seenrr.dto.UserDto;
 import com.seenrr.seenrr.entity.User;
 import com.seenrr.seenrr.service.UserService;
 
 @RestController
+@RequestMapping("/security")
 public class SecurityController {
 
     @Autowired
     private UserService userService;
 
-    @PostMapping("/security/register")
-    public ResponseEntity<?> registerUser(@RequestBody User user) {
-        try {
-            User createdUser = userService.createUser(user.getUsername(), user.getEmail(), user.getPassword());
-            return ResponseEntity.ok(createdUser);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
-    }
-
-    @PostMapping("/security/login")
-    public ResponseEntity<?> loginUser(@RequestBody User user) {
-        try {
-            Map<String, String> foundUser = userService.logUser(user.getUsername(), user.getPassword());
-            if (foundUser != null) {
-                return ResponseEntity.ok(foundUser);
-            } else {
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Nom d'utilisateur ou mot de passe incorrect.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponseDto> registerUser(@RequestBody UserDto userDto) {
+        return executeAndHandleExceptions(() -> {
+            User createdUser;
+            try {
+                createdUser = userService.createUser(userDto.getUsername(), userDto.getEmail(), userDto.getPassword());
+                return new ApiResponseDto(true, "Utilisateur enregistré avec succès", createdUser);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
             }
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            System.out.println(e.getMessage());
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+            return null;
+        });
     }
 
-    @PostMapping("/security/login-2fa")
-    public ResponseEntity<?> loginUser2FA(@RequestBody Map<String, String> request) {
-        String username = request.get("username");
-        String password = request.get("password");
-        String code = request.get("code");
-
-        try {
-            Map<String, String> foundUser = userService.logUser2FA(username, password, code);
-            if (foundUser != null) {
-                return ResponseEntity.ok(foundUser);
-            } else {
-                Map<String, String> errorResponse = new HashMap<>();
-                errorResponse.put("error", "Nom d'utilisateur ou mot de passe incorrect.");
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(errorResponse);
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponseDto> loginUser(@RequestBody LoginDto LoginDto) {
+        return executeAndHandleExceptions(() -> {
+            Map<String, String> userInfo;
+            try {
+                userInfo = userService.logUser(LoginDto.getUsername(), LoginDto.getPassword());
+                if (userInfo == null) {
+                    throw new IllegalArgumentException("Nom d'utilisateur ou mot de passe incorrect.");
+                }
+                return new ApiResponseDto(true, "Connexion réussie", userInfo);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
             }
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+            return null;
+        });
     }
 
-    @GetMapping("/security/enable-2fa")
-    public ResponseEntity<?>  enable2FA(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token manquant ou invalide"));
-        }
-        String token = authHeader.substring(7);
-        try {
+    @PostMapping("/login-2fa")
+    public ResponseEntity<ApiResponseDto> loginUser2FA(@RequestBody Login2FADto request) {
+        return executeAndHandleExceptions(() -> {
+            Map<String, String> userInfo;
+            try {
+                userInfo = userService.logUser2FA(
+                        request.getUsername(), 
+                        request.getPassword(), 
+                        request.getCode());
+                if (userInfo == null) {
+                    throw new IllegalArgumentException("Nom d'utilisateur, mot de passe ou code 2FA incorrect.");
+                }
+                return new ApiResponseDto(true, "Connexion avec 2FA réussie", userInfo);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
+    }
+
+    @GetMapping("/enable-2fa")
+    public ResponseEntity<ApiResponseDto> enable2FA(@RequestHeader("Authorization") String authHeader) {
+        return executeWithTokenAndHandleExceptions(authHeader, token -> {
             Map<String, String> result = userService.enable2FA(token);
-            String qrUrl = result.get("qrUrl");
-            String secret = result.get("secret");
-            return ResponseEntity.ok(Map.of("qrCodeUrl", qrUrl, "secret", secret));
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+            return new ApiResponseDto(true, "2FA activé avec succès", Map.of(
+                    "qrCodeUrl", result.get("qrUrl"), 
+                    "secret", result.get("secret")));
+        });
     }
 
-    @GetMapping("/security/disable-2fa")
-    public ResponseEntity<?> disable2FA(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token manquant ou invalide"));
-        }
-        String token = authHeader.substring(7);
-
-        try {
-            Map<String, String> isDisabled = userService.disable2FA(token);
-            return ResponseEntity.ok(isDisabled);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+    @GetMapping("/disable-2fa")
+    public ResponseEntity<ApiResponseDto> disable2FA(@RequestHeader("Authorization") String authHeader) {
+        return executeWithTokenAndHandleExceptions(authHeader, token -> {
+            Map<String, String> result = userService.disable2FA(token);
+            return new ApiResponseDto(true, "2FA désactivé avec succès", result);
+        });
     }
 
-    @PostMapping("/security/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody User user) {
-        try {
+    @PostMapping("/forgot-password")
+    public ResponseEntity<ApiResponseDto> forgotPassword(@RequestBody UserDto user) {
+        return executeAndHandleExceptions(() -> {
             Map<String, String> response = userService.forgotPassword(user.getEmail());
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+            return new ApiResponseDto(true, "Email de réinitialisation envoyé", response);
+        });
     }
 
-    @PostMapping("/security/verify-password-reset")
-    public ResponseEntity<?> verifyPasswordReset(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
-        String email = request.get("email");
-
-        try {
-            Map<String, String> response = userService.verifyPasswordReset(email, token);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+    @PostMapping("/verify-password-reset")
+    public ResponseEntity<ApiResponseDto> verifyPasswordReset(@RequestBody PasswordResetDto request) {
+        return executeAndHandleExceptions(() -> {
+            Map<String, String> response;
+            try {
+                response = userService.verifyPasswordReset(request.getEmail(), request.getToken());
+                return new ApiResponseDto(true, "Token vérifié avec succès", response);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
     }
 
-    @PostMapping("/security/password-reset")
-    public ResponseEntity<?> resetPassword(@RequestBody Map<String, String> request) {
-        String token = request.get("token");
-        String email = request.get("email");
-        String newPassword = request.get("password");
-
-        try {
-            Map<String, String> response = userService.resetPassword(email, token, newPassword);
-            return ResponseEntity.ok(response);
-        } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
-        }
+    @PostMapping("/password-reset")
+    public ResponseEntity<ApiResponseDto> resetPassword(@RequestBody PasswordResetDto request) {
+        return executeAndHandleExceptions(() -> {
+            Map<String, String> response;
+            try {
+                response = userService.resetPassword(
+                        request.getEmail(), 
+                        request.getToken(), 
+                        request.getPassword());
+                return new ApiResponseDto(true, "Mot de passe réinitialisé avec succès", response);
+            } catch (NoSuchAlgorithmException e) {
+                e.printStackTrace();
+            }
+            return null;
+        });
     }
 
-    @GetMapping("/security/profile")
-    public ResponseEntity<?> getUserProfile(@RequestHeader("Authorization") String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("error", "Token manquant ou invalide"));
-        }
-        String token = authHeader.substring(7);
-
-        try {
+    @GetMapping("/profile")
+    public ResponseEntity<ApiResponseDto> getUserProfile(@RequestHeader("Authorization") String authHeader) {
+        return executeWithTokenAndHandleExceptions(authHeader, token -> {
             User user = userService.getUserProfile(token);
-            return ResponseEntity.ok(user);
+            return new ApiResponseDto(true, "Profil récupéré avec succès", user);
+        });
+    }
+
+    private <T> ResponseEntity<ApiResponseDto> executeAndHandleExceptions(Supplier<ApiResponseDto> action) {
+        try {
+            return ResponseEntity.ok(action.get());
         } catch (IllegalArgumentException e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            return ResponseEntity
+                    .status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponseDto(false, e.getMessage(), null));
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("error", "Une erreur inattendue est survenue.");
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+            return ResponseEntity
+                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponseDto(false, "Une erreur inattendue est survenue.", null));
         }
     }
 
+    private <T> ResponseEntity<ApiResponseDto> executeWithTokenAndHandleExceptions(
+        String authHeader, 
+        java.util.function.Function<String, ApiResponseDto> action) {
+    
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(new ApiResponseDto(false, "Token manquant ou invalide", null));
+    }
+    
+    String token = authHeader.substring(7);
+    return executeAndHandleExceptions(() -> action.apply(token));
+}
 }

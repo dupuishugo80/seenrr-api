@@ -134,9 +134,7 @@ public class UserService {
         user.setTwoFaEnabled(false);
         user.setTwoFaSecret(null);
         userRepository.save(user);
-        Map<String, String> result = new HashMap<>();
-        result.put("result", "2FA désactivé avec succès.");
-        return result;
+        return null;
     }
 
     public User getUserProfile(String token) {
@@ -172,7 +170,7 @@ public class UserService {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return Map.of("result", "Un e-mail de réinitialisation de mot de passe a été envoyé à l'adresse fournie.");
+        return null;
     }
 
     public Map<String, String> verifyPasswordReset(String email, String token) throws NoSuchAlgorithmException {
@@ -192,7 +190,7 @@ public class UserService {
         if (!foundUser.getPasswordResetToken().equals(token)) {
             throw new IllegalArgumentException("Token invalide.");
         }
-        return Map.of("isValid", "true");
+        return null;
     }
 
     public Map<String, String> resetPassword(String email, String token, String newPassword) throws NoSuchAlgorithmException {
@@ -222,7 +220,7 @@ public class UserService {
         foundUser.setPassword(encodedPassword);
         foundUser.setPasswordResetToken(null);
         userRepository.save(foundUser);
-        return Map.of("result", "Mot de passe réinitialisé avec succès.");
+        return null;
     }
     
 }
