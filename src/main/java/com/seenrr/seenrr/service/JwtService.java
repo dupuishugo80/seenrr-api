@@ -1,5 +1,6 @@
 package com.seenrr.seenrr.service;
 
+import java.security.SecureRandom;
 import java.util.Date;
 
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import io.jsonwebtoken.Jwts;
 public class JwtService {
 
     private static String secretKey = "c6f47bd1a9c4f6b8d8d6fdad39f3b128f8fd5f6b47748c9c9d1e6b60c1a9d51f4f035ce1d2e74f71c5b3727e11f015446fa72f8e64ec98181df63f8c9b1c1dfb1";
+    private static final SecureRandom random = new SecureRandom();
 
     public static String generateToken(String username) {
         Date now = new Date();
@@ -70,9 +72,13 @@ public class JwtService {
         }
     }
 
-
-    public static String generateTemporaryToken(String username) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'generateTemporaryToken'");
+    public static String generateTemporaryToken(int length) {
+        byte[] bytes = new byte[length / 2];
+        random.nextBytes(bytes);
+        StringBuilder sb = new StringBuilder();
+        for (byte b : bytes) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
     }
 }

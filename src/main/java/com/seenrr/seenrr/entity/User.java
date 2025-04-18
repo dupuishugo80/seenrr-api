@@ -32,6 +32,9 @@ public class User {
     @Column(name = "is_two_fa_enabled")
     private boolean isTwoFaEnabled;
 
+    @Column(name = "password_reset_token")
+    private String passwordResetToken;
+
     public User() {}
 
     public User(String username, String email, String password) {
@@ -104,6 +107,14 @@ public class User {
     
     public void setTwoFaEnabled(boolean twoFaEnabled) {
         isTwoFaEnabled = twoFaEnabled;
+    }
+
+    public String getPasswordResetToken() {
+        return passwordResetToken;
+    }
+
+    public void setPasswordResetToken(String passwordResetToken) {
+        this.passwordResetToken = passwordResetToken;
     }
 
     @PrePersist

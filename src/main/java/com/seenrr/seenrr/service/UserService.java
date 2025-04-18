@@ -19,6 +19,9 @@ public class UserService {
     @Autowired
     private EncoderService encoderService;
 
+    @Autowired
+    private MailjetEmailService mailjetEmailService;
+
     private static final String PASSWORD_REGEX = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^a-zA-Z0-9]).{8,}$";
     private static final Pattern PATTERN_Password = Pattern.compile(PASSWORD_REGEX);
 
@@ -147,6 +150,79 @@ public class UserService {
         String tokenUsername = JwtService.extractUsername(token);
         User user = userRepository.findByUsername(tokenUsername);
         return user;
+    }
+
+    public Map<String, String> forgotPassword(String entity) {
+        if (entity == null || entity.isEmpty()) {
+            throw new IllegalArgumentException("Adresse e-mail requise.");
+        }
+        if (!isValid(entity, PATTERN_Email)) {
+            throw new IllegalArgumentException("Adresse e-mail invalide.");
+        }
+        User foundUser = userRepository.findByEmail(entity);
+        if (foundUser == null) {
+            throw new IllegalArgumentException("Aucun utilisateur trouvé avec cette adresse e-mail.");
+        }
+        String passwordResetToken = JwtService.generateTemporaryToken(30);
+        foundUser.setPasswordResetToken(passwordResetToken);
+        userRepository.save(foundUser);
+        String resetLink = "http://localhost:8080/security/reset-password?token=" + passwordResetToken; // A CHANGER AVEC URL FRONT
+        try {
+            mailjetEmailService.sendEmail("socooolmeen@gmail.com", entity, foundUser.getUsername(), "Réinitialisation de mot de passe", resetLink, resetLink);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Map.of("result", "Un e-mail de réinitialisation de mot de passe a été envoyé à l'adresse fournie.");
+    }
+
+    public Map<String, String> verifyPasswordReset(String email, String token) throws NoSuchAlgorithmException {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token requis.");
+        }
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email requis.");
+        }
+        if (!isValid(email, PATTERN_Email)) {
+            throw new IllegalArgumentException("Adresse e-mail invalide.");
+        }
+        User foundUser = userRepository.findByEmail(email);
+        if (foundUser == null) {
+            throw new IllegalArgumentException("Aucun utilisateur trouvé avec cette adresse e-mail.");
+        }
+        if (!foundUser.getPasswordResetToken().equals(token)) {
+            throw new IllegalArgumentException("Token invalide.");
+        }
+        return Map.of("isValid", "true");
+    }
+
+    public Map<String, String> resetPassword(String email, String token, String newPassword) throws NoSuchAlgorithmException {
+        if (email == null || email.isEmpty()) {
+            throw new IllegalArgumentException("Email requis.");
+        }
+        if (!isValid(email, PATTERN_Email)) {
+            throw new IllegalArgumentException("Adresse e-mail invalide.");
+        }
+        User foundUser = userRepository.findByEmail(email);
+        if (foundUser == null) {
+            throw new IllegalArgumentException("Aucun utilisateur trouvé avec cette adresse e-mail.");
+        }
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token requis.");
+        }
+        if (!foundUser.getPasswordResetToken().equals(token)) {
+            throw new IllegalArgumentException("Token invalide.");
+        }
+        if (newPassword == null || newPassword.isEmpty()) {
+            throw new IllegalArgumentException("Nouveau mot de passe requis.");
+        }
+        if (!isValid(newPassword, PATTERN_Password)) {
+            throw new IllegalArgumentException("Compléxité du mot de passe insuffisante.");
+        }
+        String encodedPassword = encoderService.encodeToSha256(newPassword);
+        foundUser.setPassword(encodedPassword);
+        foundUser.setPasswordResetToken(null);
+        userRepository.save(foundUser);
+        return Map.of("result", "Mot de passe réinitialisé avec succès.");
     }
     
 }
