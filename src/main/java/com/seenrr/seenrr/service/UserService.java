@@ -8,6 +8,7 @@ import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.seenrr.seenrr.entity.User;
+import com.seenrr.seenrr.exception.IllegalArgumentException;
 import com.seenrr.seenrr.repository.UserRepository;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 
@@ -33,35 +34,29 @@ public class UserService {
     }
 
     public User createUser(String username, String email, String password) throws NoSuchAlgorithmException {
-        if (username == null || username.isEmpty() || email == null || email.isEmpty() || password == null || password.isEmpty()) {
-            throw new IllegalArgumentException("Tous les champs sont requis.");
-        }
-        if(!isValid(email, PATTERN_Email)) {
-            throw new IllegalArgumentException("Adresse e-mail invalide.");
-        }
+        validateRequiredFields(username, "Nom d'utilisateur");
+        validateRequiredFields(email, "Email");
+        validateRequiredFields(password, "Mot de passe");
+        validateEmail(email);
+        validatePassword(password);
+
         if (userRepository.existsByUsername(username)) {
             throw new IllegalArgumentException("Nom d'utilisateur déjà utilisé.");
         }
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Adresse e-mail déjà utilisée.");
         }
-        if (!isValid(password, PATTERN_Password)) {
-            throw new IllegalArgumentException("Compléxité du mot de passe insuffisante.");
-        }
+
         String encodedPassword = encoderService.encodeToSha256(password);
         User user = new User(username, email, encodedPassword);
         return userRepository.save(user);
     }
 
     public Map<String, String> logUser(String username, String password) throws NoSuchAlgorithmException {
+        validateRequiredFields(username, "Nom d'utilisateur");
+        validateRequiredFields(password, "Mot de passe");
         String encodedPassword = encoderService.encodeToSha256(password);
         User foundUser = userRepository.findByUsernameAndPassword(username, encodedPassword);
-        if (foundUser == null) {
-            throw new IllegalArgumentException("Identifiants invalide.");
-        }
-        if(foundUser.isTwoFaEnabled()) {
-            throw new IllegalArgumentException("2FA activé. Veuillez le désactiver pour vous connecter.");
-        }
         String token = JwtService.generateToken(foundUser.getUsername());
         Map<String, String> loggedUser = new HashMap<>();
         loggedUser.put("username", foundUser.getUsername());
@@ -71,14 +66,12 @@ public class UserService {
     }
 
     public Map<String, String> logUser2FA(String username, String password, String code) throws NoSuchAlgorithmException {
-        if(code.isEmpty() || !code.matches("\\d+")) {
-            throw new IllegalArgumentException("Code 2FA mal formaté.");
-        }
+        validateRequiredFields(username, "Nom d'utilisateur");
+        validateRequiredFields(password, "Mot de passe");
+        validateRequiredFields(code, "Code 2FA");
+        
         String encodedPassword = encoderService.encodeToSha256(password);
         User foundUser = userRepository.findByUsernameAndPassword(username, encodedPassword);
-        if (foundUser == null) {
-            throw new IllegalArgumentException("Identifiants invalide.");
-        }
         if (!foundUser.isTwoFaEnabled()) {
             throw new IllegalArgumentException("2FA non activé. Veuillez utiliser la méthoque classique pour vous connecter.");
         } 
@@ -150,14 +143,10 @@ public class UserService {
         return user;
     }
 
-    public Map<String, String> forgotPassword(String entity) {
-        if (entity == null || entity.isEmpty()) {
-            throw new IllegalArgumentException("Adresse e-mail requise.");
-        }
-        if (!isValid(entity, PATTERN_Email)) {
-            throw new IllegalArgumentException("Adresse e-mail invalide.");
-        }
-        User foundUser = userRepository.findByEmail(entity);
+    public Map<String, String> forgotPassword(String email) {
+        validateRequiredFields(email, "Email");
+        validateEmail(email);
+        User foundUser = userRepository.findByEmail(email);
         if (foundUser == null) {
             throw new IllegalArgumentException("Aucun utilisateur trouvé avec cette adresse e-mail.");
         }
@@ -166,7 +155,7 @@ public class UserService {
         userRepository.save(foundUser);
         String resetLink = "http://localhost:8080/security/reset-password?token=" + passwordResetToken; // A CHANGER AVEC URL FRONT
         try {
-            mailjetEmailService.sendEmail("socooolmeen@gmail.com", entity, foundUser.getUsername(), "Réinitialisation de mot de passe", resetLink, resetLink);
+            mailjetEmailService.sendEmail("socooolmeen@gmail.com", email, foundUser.getUsername(), "Réinitialisation de mot de passe", resetLink, resetLink);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -174,15 +163,9 @@ public class UserService {
     }
 
     public Map<String, String> verifyPasswordReset(String email, String token) throws NoSuchAlgorithmException {
-        if (token == null || token.isEmpty()) {
-            throw new IllegalArgumentException("Token requis.");
-        }
-        if (email == null || email.isEmpty()) {
-            throw new IllegalArgumentException("Email requis.");
-        }
-        if (!isValid(email, PATTERN_Email)) {
-            throw new IllegalArgumentException("Adresse e-mail invalide.");
-        }
+        validateRequiredFields(email, "Email");
+        validateRequiredFields(token, "Token");
+        validateEmail(email);
         User foundUser = userRepository.findByEmail(email);
         if (foundUser == null) {
             throw new IllegalArgumentException("Aucun utilisateur trouvé avec cette adresse e-mail.");
@@ -194,33 +177,42 @@ public class UserService {
     }
 
     public Map<String, String> resetPassword(String email, String token, String newPassword) throws NoSuchAlgorithmException {
-        if (email == null || email.isEmpty()) {
-            throw new IllegalArgumentException("Email requis.");
-        }
-        if (!isValid(email, PATTERN_Email)) {
-            throw new IllegalArgumentException("Adresse e-mail invalide.");
-        }
-        User foundUser = userRepository.findByEmail(email);
-        if (foundUser == null) {
+        validateRequiredFields(email, "Email");
+        validateRequiredFields(token, "Token");
+        validateRequiredFields(newPassword, "Nouveau mot de passe");
+        
+        validateEmail(email);
+        validatePassword(newPassword);
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
             throw new IllegalArgumentException("Aucun utilisateur trouvé avec cette adresse e-mail.");
         }
-        if (token == null || token.isEmpty()) {
-            throw new IllegalArgumentException("Token requis.");
-        }
-        if (!foundUser.getPasswordResetToken().equals(token)) {
+        
+        if (user.getPasswordResetToken() == null || !user.getPasswordResetToken().equals(token)) {
             throw new IllegalArgumentException("Token invalide.");
         }
-        if (newPassword == null || newPassword.isEmpty()) {
-            throw new IllegalArgumentException("Nouveau mot de passe requis.");
-        }
-        if (!isValid(newPassword, PATTERN_Password)) {
-            throw new IllegalArgumentException("Compléxité du mot de passe insuffisante.");
-        }
         String encodedPassword = encoderService.encodeToSha256(newPassword);
-        foundUser.setPassword(encodedPassword);
-        foundUser.setPasswordResetToken(null);
-        userRepository.save(foundUser);
+        user.setPassword(encodedPassword);
+        user.setPasswordResetToken(null);
+        userRepository.save(user);
         return null;
     }
     
+    private void validateRequiredFields(String value, String fieldName) {
+        if (value == null || value.isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " requis.");
+        }
+    }
+    
+    private void validateEmail(String email) {
+        if (!PATTERN_Email.matcher(email).matches()) {
+            throw new IllegalArgumentException("Adresse e-mail invalide.");
+        }
+    }
+    
+    private void validatePassword(String password) {
+        if (!PATTERN_Password.matcher(password).matches()) {
+            throw new IllegalArgumentException("Complexité du mot de passe insuffisante.");
+        }
+    }
 }
