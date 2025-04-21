@@ -4,37 +4,42 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.seenrr.seenrr.dto.ApiResponseDto;
-import com.seenrr.seenrr.entity.Media;
-import com.seenrr.seenrr.service.MediaService;
+import com.seenrr.seenrr.dto.ReviewDto;
+import com.seenrr.seenrr.entity.Review;
+import com.seenrr.seenrr.service.ReviewService;
 
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+
 
 @RestController
-@RequestMapping("/media")
-public class MediaController {
+@RequestMapping("/review")
+public class ReviewController {
 
     @Autowired
-    private MediaService MediaService;
-    
-    @GetMapping("/fetch/{id}")
-    public ResponseEntity<ApiResponseDto> getMedia(@PathVariable("id") Integer id) {
+    private ReviewService reviewService;
+
+    @PostMapping("/create")
+    public ResponseEntity<ApiResponseDto> createReview(@RequestBody ReviewDto reviewDto) {
         return executeAndHandleExceptions(() -> {
-            Media media = MediaService.getMediaById(id, "movie");
-            return new ApiResponseDto(true, "", media);
-        });
-    }
-    
-    @GetMapping("/delete/{id}")
-    public ResponseEntity<ApiResponseDto> deleteMedia(@PathVariable("id") Integer id) {
-        return executeAndHandleExceptions(() -> {
-            MediaService.deleteMediaById(id);
-            return new ApiResponseDto(true, "", null);
+            Review review;
+            try {
+                review = reviewService.createReview(
+                        reviewDto.getMediaId(),
+                        reviewDto.getUserId(),
+                        reviewDto.getReviewText(),
+                        reviewDto.getRating()
+                );
+                return new ApiResponseDto(true, "", review);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return null;
         });
     }
 
@@ -46,6 +51,7 @@ public class MediaController {
                     .status(HttpStatus.BAD_REQUEST)
                     .body(new ApiResponseDto(false, e.getMessage(), null));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity
                     .status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponseDto(false, "Une erreur inattendue est survenue.", null));

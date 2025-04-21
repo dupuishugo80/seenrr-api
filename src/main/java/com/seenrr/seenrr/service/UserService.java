@@ -142,6 +142,11 @@ public class UserService {
         return user;
     }
 
+    public User getUserById(Integer userId) {
+        User user = userRepository.findById(userId);
+        return user;
+    }
+
     public Map<String, String> forgotPassword(String email) {
         validateRequiredFields(email, "Email");
         validateEmail(email);
