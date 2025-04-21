@@ -1,7 +1,6 @@
 package com.seenrr.seenrr.controller;
 
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -161,16 +160,16 @@ public class SecurityController {
     }
 
     private <T> ResponseEntity<ApiResponseDto> executeWithTokenAndHandleExceptions(
-        String authHeader, 
-        java.util.function.Function<String, ApiResponseDto> action) {
+            String authHeader, 
+            java.util.function.Function<String, ApiResponseDto> action) {
     
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponseDto(false, "Token manquant ou invalide", null));
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponseDto(false, "Token manquant ou invalide", null));
+        }
+        
+        String token = authHeader.substring(7);
+        return executeAndHandleExceptions(() -> action.apply(token));
     }
-    
-    String token = authHeader.substring(7);
-    return executeAndHandleExceptions(() -> action.apply(token));
-}
 }

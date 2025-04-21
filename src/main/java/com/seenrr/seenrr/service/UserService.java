@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.seenrr.seenrr.entity.User;
-import com.seenrr.seenrr.exception.IllegalArgumentException;
 import com.seenrr.seenrr.repository.UserRepository;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 
