@@ -37,6 +37,11 @@ public class ReviewService {
             throw new IllegalArgumentException("L'utilisateur n'existe pas.");
         }
 
+        Review existingReview = reviewRepository.findByMediaAndUser(media, user);
+        if (existingReview != null) {
+            throw new IllegalArgumentException("Une review existe déja pour ce média.");
+        }
+
         Review review = new Review();
         review.setMedia(media);
         review.setUser(user);
@@ -46,5 +51,36 @@ public class ReviewService {
         review.setUpdatedAt(LocalDateTime.now());
         return reviewRepository.save(review);
     }
-    
+
+    public Review getReviewById(Integer id) {
+        Review review = reviewRepository.findById(id);
+        if (review == null) {
+            throw new IllegalArgumentException("La review est introuvable.");
+        }
+        return review;
+    }
+
+    public void deleteReview(Integer id) {
+        Review review = reviewRepository.findById(id);
+        if (review == null) {
+            throw new IllegalArgumentException("La review est introuvable.");
+        }
+        reviewRepository.delete(review);
+    }
+
+    public Review updateReview(Integer id, String reviewText, double rating) {
+        Review review = reviewRepository.findById(id);
+        if (review == null) {
+            throw new IllegalArgumentException("La review est introuvable.");
+        }
+
+        if (reviewText != null) {
+            review.setReviewText(reviewText);
+        }
+        if (rating > 0 && rating <= 5) {
+            review.setRating(rating);
+        }
+        review.setUpdatedAt(LocalDateTime.now());
+        return reviewRepository.save(review);
+    }
 }
