@@ -1,9 +1,6 @@
 package com.seenrr.seenrr.entity;
 
 import java.time.LocalDateTime;
-
-import org.springframework.cglib.core.Local;
-
 import jakarta.persistence.*;
 
 @Entity

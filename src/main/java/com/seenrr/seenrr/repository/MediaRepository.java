@@ -5,6 +5,6 @@ import com.seenrr.seenrr.entity.Media;
 
 public interface MediaRepository extends JpaRepository<Media, Long> {
 
-    Media findByTmdbId(Integer tmdbId);
+    Media findByTmdbId(Long tmdbId);
     
 }

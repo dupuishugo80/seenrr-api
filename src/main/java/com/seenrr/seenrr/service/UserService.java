@@ -3,10 +3,14 @@ package com.seenrr.seenrr.service;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import com.seenrr.seenrr.dto.ReviewDto;
+import com.seenrr.seenrr.dto.UserDto;
 import com.seenrr.seenrr.entity.User;
 import com.seenrr.seenrr.repository.UserRepository;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
@@ -142,8 +146,22 @@ public class UserService {
         return user;
     }
 
-    public User getUserById(Integer userId) {
+    public UserDto getUserDtoById(Integer userId, String token) {
+        validateToken(token);
         User user = userRepository.findById(userId);
+        if (user == null) {
+            throw new IllegalArgumentException("Utilisateur introuvable.");
+        }
+        return toDto(user);
+    }
+
+    public User getUserById(Long userId, String token) {
+        validateToken(token);
+        Integer id = Math.toIntExact(userId);
+        User user = userRepository.findById(id);
+        if (user == null) {
+            throw new IllegalArgumentException("Utilisateur introuvable.");
+        }
         return user;
     }
 
@@ -208,6 +226,61 @@ public class UserService {
             throw new IllegalArgumentException("Utilisateur introuvable.");
         }
         return user;
+    }
+
+    public Set<ReviewDto> getUserReviews(Integer id, String token) {
+        validateToken(token);
+        Set<ReviewDto> reviews = userRepository.findById(id).getReviews();
+        if (reviews == null) {
+            throw new IllegalArgumentException("Aucune critique trouvée pour cet utilisateur.");
+        }
+        return reviews;
+    }
+
+    public void followUser(Integer id, String token) {
+        validateToken(token);
+        User userToFollow = userRepository.findById(id);
+        if (userToFollow == null) {
+            throw new IllegalArgumentException("Utilisateur introuvable.");
+        }
+        String tokenUsername = JwtService.extractUsername(token);
+        User loggedUser = userRepository.findByUsername(tokenUsername);
+        if (loggedUser == null) {
+            throw new IllegalArgumentException("Token invalide.");
+        }
+        loggedUser.follow(userToFollow);
+        userRepository.save(loggedUser);
+    }
+
+    public void unfollowUser(Integer id, String token) {
+        validateToken(token);
+        User userToUnfollow = userRepository.findById(id);
+        if (userToUnfollow == null) {
+            throw new IllegalArgumentException("Utilisateur introuvable.");
+        }
+        String tokenUsername = JwtService.extractUsername(token);
+        User loggedUser = userRepository.findByUsername(tokenUsername);
+        if (loggedUser == null) {
+            throw new IllegalArgumentException("Token invalide.");
+        }
+        loggedUser.unfollow(userToUnfollow);
+        userRepository.save(loggedUser);
+    }
+
+    public UserDto toDto(User user) {
+        return new UserDto(user.getId(), user.getUsername(), user.getEmail(), user.getCreatedAt());
+    }
+
+    private void validateToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token requis.");
+        }
+        if (!JwtService.isValidToken(token)) {
+            throw new IllegalArgumentException("Token invalide.");
+        }
+        if (JwtService.isTokenExpired(token)) {
+            throw new IllegalArgumentException("Token expiré.");
+        }
     }
     
     private void validateRequiredFields(String value, String fieldName) {

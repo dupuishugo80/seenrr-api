@@ -18,7 +18,7 @@ import com.seenrr.seenrr.dto.ApiResponseDto;
 import com.seenrr.seenrr.dto.Login2FADto;
 import com.seenrr.seenrr.dto.LoginDto;
 import com.seenrr.seenrr.dto.PasswordResetDto;
-import com.seenrr.seenrr.dto.UserDto;
+import com.seenrr.seenrr.dto.PostUserDto;
 import com.seenrr.seenrr.entity.User;
 import com.seenrr.seenrr.service.UserService;
 
@@ -30,7 +30,7 @@ public class SecurityController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponseDto> registerUser(@RequestBody UserDto userDto) {
+    public ResponseEntity<ApiResponseDto> registerUser(@RequestBody PostUserDto userDto) {
         return executeAndHandleExceptions(() -> {
             User createdUser;
             try {
@@ -99,7 +99,7 @@ public class SecurityController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponseDto> forgotPassword(@RequestBody UserDto user) {
+    public ResponseEntity<ApiResponseDto> forgotPassword(@RequestBody PostUserDto user) {
         return executeAndHandleExceptions(() -> {
             Map<String, String> response = userService.forgotPassword(user.getEmail());
             return new ApiResponseDto(true, "Email de réinitialisation envoyé", response);

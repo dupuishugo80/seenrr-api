@@ -3,14 +3,17 @@ package com.seenrr.seenrr.dto;
 public class ReviewDto {
     private String reviewText;
     private double rating;
-    private Integer mediaId;
-    private Integer userId;
+    private Long mediaId;
+    private Long userId;
 
-    public ReviewDto(String reviewText, double rating, Integer mediaId, Integer userId) {
+    public ReviewDto(String reviewText, double rating, Long mediaId, Long userId) {
         this.reviewText = reviewText;
         this.rating = rating;
         this.mediaId = mediaId;
         this.userId = userId;
+    }
+
+    public ReviewDto() {
     }
 
     public String getReviewText() {
@@ -29,19 +32,19 @@ public class ReviewDto {
         this.rating = rating;
     }
 
-    public Integer getMediaId() {
+    public Long getMediaId() {
         return mediaId;
     }
 
-    public void setMediaId(Integer mediaId) {
+    public void setMediaId(Long mediaId) {
         this.mediaId = mediaId;
     }
 
-    public Integer getUserId() {
+    public Long getUserId() {
         return userId;
     }
 
-    public void setUserId(Integer userId) {
+    public void setUserId(Long userId) {
         this.userId = userId;
     }
 }

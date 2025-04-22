@@ -12,6 +12,7 @@ import java.util.function.Supplier;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -22,16 +23,16 @@ public class MediaController {
     @Autowired
     private MediaService MediaService;
     
-    @GetMapping("/fetch/{id}")
-    public ResponseEntity<ApiResponseDto> getMedia(@PathVariable("id") Integer id) {
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponseDto> getMedia(@PathVariable("id") Long id) {
         return executeAndHandleExceptions(() -> {
             Media media = MediaService.getMediaById(id, "movie");
             return new ApiResponseDto(true, "", media);
         });
     }
     
-    @GetMapping("/delete/{id}")
-    public ResponseEntity<ApiResponseDto> deleteMedia(@PathVariable("id") Integer id) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponseDto> deleteMedia(@PathVariable("id") Long id) {
         return executeAndHandleExceptions(() -> {
             MediaService.deleteMediaById(id);
             return new ApiResponseDto(true, "", null);

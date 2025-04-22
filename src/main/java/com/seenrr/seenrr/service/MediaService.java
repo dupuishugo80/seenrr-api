@@ -37,7 +37,7 @@ public class MediaService {
 
     private RestTemplate restTemplate = new RestTemplate();
 
-    public Media getMediaById(Integer id, String type) {
+    public Media getMediaById(Long id, String type) {
         Media media = mediaRepository.findByTmdbId(id);
         if (media != null) {
             return media;
@@ -106,7 +106,7 @@ public class MediaService {
         return mediaRepository.findById(mediaFetch.getId()).orElse(null);
     }
 
-    public void deleteMediaById(Integer id) {
+    public void deleteMediaById(Long id) {
         Media media = mediaRepository.findByTmdbId(id);
         if (media == null) {
             throw new IllegalArgumentException("Aucun média trouvé avec cet ID.");

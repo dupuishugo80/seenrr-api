@@ -5,67 +5,58 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.seenrr.seenrr.dto.ApiResponseDto;
 import com.seenrr.seenrr.dto.ReviewDto;
-import com.seenrr.seenrr.entity.Review;
-import com.seenrr.seenrr.service.ReviewService;
+import com.seenrr.seenrr.dto.UserDto;
+import com.seenrr.seenrr.service.UserService;
 
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestHeader;
 
 @RestController
-@RequestMapping("/review")
-public class ReviewController {
+@RequestMapping("/user")
+public class UserController {
 
     @Autowired
-    private ReviewService reviewService;
-
-    @PostMapping("/create")
-    public ResponseEntity<ApiResponseDto> createReview(@RequestHeader("Authorization") String authHeader, @RequestBody ReviewDto reviewDto) {
-        return executeWithTokenAndHandleExceptions(authHeader, token -> {
-            Review review;
-            review = reviewService.createReview(
-                    reviewDto.getMediaId(),
-                    reviewDto.getUserId(),
-                    reviewDto.getReviewText(),
-                    reviewDto.getRating(),
-                    token
-            );
-            return new ApiResponseDto(true, "", review);
-        });
-    }
+    private UserService userService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponseDto> getReview(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id) {
+    public ResponseEntity<ApiResponseDto> getUser(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id) {
         return executeWithTokenAndHandleExceptions(authHeader, token -> {
-            Review review = reviewService.getReviewById(id, token);
-            return new ApiResponseDto(true, "", review);
+            UserDto user = userService.getUserDtoById(id, token);
+            return new ApiResponseDto(true, "", user);
         });
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponseDto> deleteReview(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id) {
+    @GetMapping("/{id}/reviews")
+    public ResponseEntity<ApiResponseDto> getUserReviews(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id) {
         return executeWithTokenAndHandleExceptions(authHeader, token -> {
-            reviewService.deleteReview(id, token);
-            return new ApiResponseDto(true, "La review a été supprimée avec succès.", null);
+            Set<ReviewDto> reviews = userService.getUserReviews(id, token);
+            return new ApiResponseDto(true, "", reviews);
         });
     }
 
-    @PostMapping("/{id}/update")
-    public ResponseEntity<ApiResponseDto> updateReview(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id, @RequestBody ReviewDto reviewDto) {
+    @GetMapping("/{id}/follow")
+    public ResponseEntity<ApiResponseDto> followUser(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id) {
         return executeWithTokenAndHandleExceptions(authHeader, token -> {
-            Review review = reviewService.updateReview(id, reviewDto.getReviewText(), reviewDto.getRating(), token);
-            return new ApiResponseDto(true, "La review a été mise à jour avec succès.", review);
+            userService.followUser(id, token);
+            return new ApiResponseDto(true, "Vous suivez maintenant cet utilisateur.", null);
         });
     }
 
+    @GetMapping("/{id}/unfollow")
+    public ResponseEntity<ApiResponseDto> unfollowUser(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id) {
+        return executeWithTokenAndHandleExceptions(authHeader, token -> {
+            userService.unfollowUser(id, token);
+            return new ApiResponseDto(true, "Vous ne suivez plus cet utilisateur.", null);
+        });
+    }
+    
     private <T> ResponseEntity<ApiResponseDto> executeAndHandleExceptions(Supplier<ApiResponseDto> action) {
         try {
             return ResponseEntity.ok(action.get());

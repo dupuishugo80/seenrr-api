@@ -1,9 +1,7 @@
 package com.seenrr.seenrr.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 
 public class MediaDto {
     private int id;

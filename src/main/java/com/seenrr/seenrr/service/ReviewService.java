@@ -22,7 +22,7 @@ public class ReviewService {
     @Autowired
     private ReviewRepository reviewRepository;
 
-    public Review createReview(Integer mediaId, Integer userId, String reviewText, double rating, String token) {
+    public Review createReview(Long mediaId, Long userId, String reviewText, double rating, String token) {
         validateToken(token);
 
         if (mediaId == null || userId == null || reviewText == null || rating < 0 || rating > 5) {
@@ -34,7 +34,7 @@ public class ReviewService {
             throw new IllegalArgumentException("Le média n'existe pas.");
         }
 
-        User user = userService.getUserById(userId);
+        User user = userService.getUserById(userId, token);
         if (user == null) {
             throw new IllegalArgumentException("L'utilisateur n'existe pas.");
         }
