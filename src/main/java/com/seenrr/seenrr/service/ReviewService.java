@@ -22,7 +22,9 @@ public class ReviewService {
     @Autowired
     private ReviewRepository reviewRepository;
 
-    public Review createReview(Integer mediaId, Integer userId, String reviewText, double rating) {
+    public Review createReview(Integer mediaId, Integer userId, String reviewText, double rating, String token) {
+        validateToken(token);
+
         if (mediaId == null || userId == null || reviewText == null || rating < 0 || rating > 5) {
             throw new IllegalArgumentException("Un des champs est invalide.");
         }
@@ -52,7 +54,9 @@ public class ReviewService {
         return reviewRepository.save(review);
     }
 
-    public Review getReviewById(Integer id) {
+    public Review getReviewById(Integer id, String token) {
+        validateToken(token);
+
         Review review = reviewRepository.findById(id);
         if (review == null) {
             throw new IllegalArgumentException("La review est introuvable.");
@@ -60,7 +64,9 @@ public class ReviewService {
         return review;
     }
 
-    public void deleteReview(Integer id) {
+    public void deleteReview(Integer id, String token) {
+        validateToken(token);
+        checkReviewOwner(id, token);
         Review review = reviewRepository.findById(id);
         if (review == null) {
             throw new IllegalArgumentException("La review est introuvable.");
@@ -68,7 +74,10 @@ public class ReviewService {
         reviewRepository.delete(review);
     }
 
-    public Review updateReview(Integer id, String reviewText, double rating) {
+    public Review updateReview(Integer id, String reviewText, double rating, String token) {
+        validateToken(token);
+        checkReviewOwner(id, token);
+
         Review review = reviewRepository.findById(id);
         if (review == null) {
             throw new IllegalArgumentException("La review est introuvable.");
@@ -82,5 +91,29 @@ public class ReviewService {
         }
         review.setUpdatedAt(LocalDateTime.now());
         return reviewRepository.save(review);
+    }
+
+    private void validateToken(String token) {
+        if (token == null || token.isEmpty()) {
+            throw new IllegalArgumentException("Token requis.");
+        }
+        if (!JwtService.isValidToken(token)) {
+            throw new IllegalArgumentException("Token invalide.");
+        }
+        if (JwtService.isTokenExpired(token)) {
+            throw new IllegalArgumentException("Token expiré.");
+        }
+    }
+
+    private void checkReviewOwner(Integer reviewId, String token) {
+        Review review = reviewRepository.findById(reviewId);
+        if (review == null) {
+            throw new IllegalArgumentException("La review est introuvable.");
+        }
+        String tokenUsername = JwtService.extractUsername(token);
+        User user = userService.getUserByUsername(tokenUsername);
+        if(user != review.getUser()) {
+            throw new IllegalArgumentException("Vous n'êtes pas le propriétaire de cette review.");
+        }
     }
 }

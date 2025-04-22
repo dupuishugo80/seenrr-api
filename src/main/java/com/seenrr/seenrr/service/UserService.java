@@ -201,6 +201,14 @@ public class UserService {
         userRepository.save(user);
         return null;
     }
+
+    public User getUserByUsername(String tokenUsername) {
+        User user = userRepository.findByUsername(tokenUsername);
+        if (user == null) {
+            throw new IllegalArgumentException("Utilisateur introuvable.");
+        }
+        return user;
+    }
     
     private void validateRequiredFields(String value, String fieldName) {
         if (value == null || value.isEmpty()) {
