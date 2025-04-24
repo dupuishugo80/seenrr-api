@@ -60,6 +60,9 @@ public class UserService {
         validateRequiredFields(password, "Mot de passe");
         String encodedPassword = encoderService.encodeToSha256(password);
         User foundUser = userRepository.findByUsernameAndPassword(username, encodedPassword);
+        if (foundUser == null) {
+            throw new IllegalArgumentException("Nom d'utilisateur ou mot de passe incorrect.");
+        }
         String token = JwtService.generateToken(foundUser.getUsername());
         Map<String, String> loggedUser = new HashMap<>();
         loggedUser.put("username", foundUser.getUsername());

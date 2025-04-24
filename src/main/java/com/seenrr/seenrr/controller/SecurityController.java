@@ -49,9 +49,6 @@ public class SecurityController {
             Map<String, String> userInfo;
             try {
                 userInfo = userService.logUser(LoginDto.getUsername(), LoginDto.getPassword());
-                if (userInfo == null) {
-                    throw new IllegalArgumentException("Nom d'utilisateur ou mot de passe incorrect.");
-                }
                 return new ApiResponseDto(true, "Connexion réussie", userInfo);
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();

@@ -23,10 +23,10 @@ public class MediaController {
     @Autowired
     private MediaService MediaService;
     
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponseDto> getMedia(@PathVariable("id") Long id) {
+    @GetMapping("/{type}/{id}")
+    public ResponseEntity<ApiResponseDto> getMedia(@PathVariable("id") Long id, @PathVariable("type") String type) {
         return executeAndHandleExceptions(() -> {
-            Media media = MediaService.getMediaById(id, "movie");
+            Media media = MediaService.getMediaById(id, type);
             return new ApiResponseDto(true, "", media);
         });
     }
