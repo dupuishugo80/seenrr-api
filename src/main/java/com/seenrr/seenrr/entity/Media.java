@@ -33,6 +33,7 @@ public class Media {
     private String country;
     private String coverUrl;
     @NotNull
+    @Column(unique = true)
     private Integer tmdbId;
     private double publicRating;
 

@@ -11,7 +11,7 @@ public class Review {
     private Long id;
 
     @ManyToOne(optional = false)
-    @JoinColumn(name = "media_id", nullable = false)
+    @JoinColumn(name = "tmdb_id", referencedColumnName = "tmdbId", nullable = false)
     private Media media;
 
     @ManyToOne(optional = false)
@@ -94,5 +94,9 @@ public class Review {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Long getMediaId() {
+        return Long.valueOf(media.getTmdbId());
     }
 }

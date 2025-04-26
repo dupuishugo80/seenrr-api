@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.seenrr.seenrr.dto.ReviewDto;
 
 import jakarta.persistence.*;
@@ -21,6 +22,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false, length = 100)
     private String password;
 
@@ -30,15 +32,19 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @Column(name = "two_fa_secret")
     private String twoFaSecret;
 
+    @JsonIgnore
     @Column(name = "is_two_fa_enabled")
     private boolean isTwoFaEnabled;
 
+    @JsonIgnore
     @Column(name = "password_reset_token")
     private String passwordResetToken;
 
+    @JsonIgnore
     @ManyToMany
     @JoinTable(
         name = "user_following",
@@ -47,6 +53,7 @@ public class User {
     )
     private Set<User> following = new HashSet<>();
 
+    @JsonIgnore
     @ManyToMany(mappedBy = "following")
     private Set<User> followers = new HashSet<>();
 
@@ -168,7 +175,16 @@ public class User {
     public Set<ReviewDto> getReviews() {
         Set<ReviewDto> reviewDtos = new HashSet<>();
         for(Review review : reviews) {
-            reviewDtos.add(new ReviewDto(review.getReviewText(), review.getRating(), review.getMedia().getId(), review.getId()));
+            reviewDtos.add(new ReviewDto(
+                review.getReviewText(), 
+                review.getRating(),
+                review.getMedia().getTmdbId(),
+                review.getUser().getId(),
+                review.getMedia().getTitle(), 
+                review.getUser().getUsername(), 
+                review.getMedia().getMediaType(),
+                review.getCreatedAt(), 
+                review.getUpdatedAt()));
         }
         return reviewDtos;
     }
@@ -185,6 +201,14 @@ public class User {
             this.following.remove(userToUnfollow);
             userToUnfollow.getFollowers().remove(this);
         }
+    }
+
+    public Set<User> getFollowing() {
+        return following;
+    }
+
+    public void setFollowing(Set<User> following) {
+        this.following = following;
     }
 
 }

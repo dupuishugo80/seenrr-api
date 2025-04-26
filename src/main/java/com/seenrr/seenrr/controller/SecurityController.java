@@ -2,9 +2,11 @@ package com.seenrr.seenrr.controller;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,8 +21,11 @@ import com.seenrr.seenrr.dto.Login2FADto;
 import com.seenrr.seenrr.dto.LoginDto;
 import com.seenrr.seenrr.dto.PasswordResetDto;
 import com.seenrr.seenrr.dto.PostUserDto;
+import com.seenrr.seenrr.dto.ReviewDto;
 import com.seenrr.seenrr.entity.User;
 import com.seenrr.seenrr.service.UserService;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/security")
@@ -138,7 +143,17 @@ public class SecurityController {
     public ResponseEntity<ApiResponseDto> getUserProfile(@RequestHeader("Authorization") String authHeader) {
         return executeWithTokenAndHandleExceptions(authHeader, token -> {
             User user = userService.getUserProfile(token);
-            return new ApiResponseDto(true, "Profil récupéré avec succès", user);
+            return new ApiResponseDto(true, "", user);
+        });
+    }
+
+    @GetMapping("/get-following-reviews")
+    public ResponseEntity<ApiResponseDto> getFollowingReviews(@RequestHeader("Authorization") String authHeader,
+     @RequestParam(defaultValue = "0") int page,
+     @RequestParam(defaultValue = "15") int size ) {
+        return executeWithTokenAndHandleExceptions(authHeader, token -> {
+            Page<ReviewDto> reviews = userService.getFollowingReviews(token, page, size);
+            return new ApiResponseDto(true, "", reviews);
         });
     }
 

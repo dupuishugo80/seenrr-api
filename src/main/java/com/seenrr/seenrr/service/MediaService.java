@@ -59,7 +59,7 @@ public class MediaService {
         
         Media mediaFetch = new Media();
         mediaFetch.setTmdbId(mediaDto.getId());
-        mediaFetch.setTitle(mediaDto.getTitle());
+        mediaFetch.setTitle(mediaDto.getTitle() != null ? mediaDto.getTitle() : mediaDto.getName());
         mediaFetch.setDescription(mediaDto.getDescription());
         mediaFetch.setMediaType(type);
         
@@ -71,13 +71,16 @@ public class MediaService {
                 System.err.println("Erreur de parsing de la date: " + mediaDto.getReleaseDate());
             }
         }
+        if(mediaFetch.getReleaseDate() == null && mediaDto.getFirstAirDate() != null) {
+            mediaFetch.setReleaseDate(mediaDto.getFirstAirDate() != null ? LocalDate.parse(mediaDto.getFirstAirDate(), DateTimeFormatter.ISO_DATE) : null);
+        }
         
         if (mediaDto.getCountries() != null && !mediaDto.getCountries().isEmpty()) {
             mediaFetch.setCountry(String.join(", ", mediaDto.getCountries()));
         }
         
         if (mediaDto.getPosterPath() != null) {
-            mediaFetch.setCoverUrl("https://image.tmdb.org/t/p/original" + mediaDto.getPosterPath());
+            mediaFetch.setCoverUrl("https://image.tmdb.org/t/p/w500" + mediaDto.getPosterPath());
         }
         
         mediaFetch.setPublicRating(mediaDto.getVoteAverage());

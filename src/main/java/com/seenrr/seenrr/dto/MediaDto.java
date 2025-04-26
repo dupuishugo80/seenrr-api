@@ -24,6 +24,12 @@ public class MediaDto {
     @JsonProperty("vote_average")
     private double voteAverage;
 
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("first_air_date")
+    private String firstAirDate;
+
     public static class GenreDto {
         private int id;
         private String name;
@@ -57,4 +63,10 @@ public class MediaDto {
 
     public double getVoteAverage() { return voteAverage; }
     public void setVoteAverage(double voteAverage) { this.voteAverage = voteAverage; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getFirstAirDate() { return firstAirDate; }
+    public void setFirstAirDate(String firstAirDate) { this.firstAirDate = firstAirDate; }
 }

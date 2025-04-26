@@ -32,10 +32,11 @@ public class ReviewController {
         return executeWithTokenAndHandleExceptions(authHeader, token -> {
             Review review;
             review = reviewService.createReview(
-                    reviewDto.getMediaId(),
+                    reviewDto.getMediaTmdbId(),
                     reviewDto.getUserId(),
                     reviewDto.getReviewText(),
                     reviewDto.getRating(),
+                    reviewDto.getType(),
                     token
             );
             return new ApiResponseDto(true, "", review);

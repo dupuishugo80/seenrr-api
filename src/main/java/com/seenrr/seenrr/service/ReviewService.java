@@ -22,14 +22,14 @@ public class ReviewService {
     @Autowired
     private ReviewRepository reviewRepository;
 
-    public Review createReview(Long mediaId, Long userId, String reviewText, double rating, String token) {
+    public Review createReview(Long mediaId, Long userId, String reviewText, double rating, String type, String token) {
         validateToken(token);
 
         if (mediaId == null || userId == null || reviewText == null || rating < 0 || rating > 5) {
             throw new IllegalArgumentException("Un des champs est invalide.");
         }
 
-        Media media = mediaService.getMediaById(mediaId, "movie");
+        Media media = mediaService.getMediaById(mediaId, type);
         if (media == null) {
             throw new IllegalArgumentException("Le média n'existe pas.");
         }
@@ -51,7 +51,8 @@ public class ReviewService {
         review.setRating(rating);
         review.setCreatedAt(LocalDateTime.now());
         review.setUpdatedAt(LocalDateTime.now());
-        return reviewRepository.save(review);
+        reviewRepository.save(review);
+        return null;
     }
 
     public Review getReviewById(Integer id, String token) {
