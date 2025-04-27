@@ -1,6 +1,9 @@
 package com.seenrr.seenrr.entity;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
 import jakarta.persistence.*;
 
 @Entity
@@ -29,6 +32,9 @@ public class Review {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+
+    @OneToMany(mappedBy = "review", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ReviewVote> votes = new HashSet<>();
 
     public Review() {
     }
@@ -98,5 +104,35 @@ public class Review {
 
     public Long getMediaId() {
         return Long.valueOf(media.getTmdbId());
+    }
+
+    public Set<ReviewVote> getVotes() {
+        return votes;
+    }
+    
+    public void setVotes(Set<ReviewVote> votes) {
+        this.votes = votes;
+    }
+    
+    public int getLikesCount() {
+        return (int) votes.stream()
+            .filter(vote -> vote.getVoteType() == ReviewVote.VoteType.LIKE)
+            .count();
+    }
+    
+    public int getDislikesCount() {
+        return (int) votes.stream()
+            .filter(vote -> vote.getVoteType() == ReviewVote.VoteType.DISLIKE)
+            .count();
+    }
+    
+    public void addVote(ReviewVote vote) {
+        votes.add(vote);
+        vote.setReview(this);
+    }
+    
+    public void removeVote(ReviewVote vote) {
+        votes.remove(vote);
+        vote.setReview(null);
     }
 }

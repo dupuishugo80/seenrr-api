@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -18,7 +19,11 @@ import org.springframework.stereotype.Service;
 
 import com.seenrr.seenrr.dto.ReviewDto;
 import com.seenrr.seenrr.dto.UserDto;
+import com.seenrr.seenrr.entity.Review;
+import com.seenrr.seenrr.entity.ReviewVote;
 import com.seenrr.seenrr.entity.User;
+import com.seenrr.seenrr.repository.ReviewRepository;
+import com.seenrr.seenrr.repository.ReviewVoteRepository;
 import com.seenrr.seenrr.repository.UserRepository;
 import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 
@@ -26,6 +31,12 @@ import com.warrenstrange.googleauth.GoogleAuthenticatorKey;
 public class UserService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private ReviewRepository reviewRepository;
+
+    @Autowired
+    private ReviewVoteRepository reviewVoteRepository;
 
     @Autowired
     private EncoderService encoderService;
@@ -298,6 +309,14 @@ public class UserService {
 
         if (reviews.isEmpty()) {
             throw new IllegalArgumentException("Aucune critique trouvée pour les utilisateurs suivis.");
+        }
+
+        for (ReviewDto review : reviews) {
+            Optional<Review> loadedReview = reviewRepository.findById(review.getId());
+            Boolean userHasLiked = reviewVoteRepository.existsByReviewAndUserAndVoteType(loadedReview.get(), loggedUser, ReviewVote.VoteType.LIKE);
+            Boolean userHasDisliked = reviewVoteRepository.existsByReviewAndUserAndVoteType(loadedReview.get(), loggedUser, ReviewVote.VoteType.DISLIKE);
+            review.setIsLiked(userHasLiked);
+            review.setIsDisliked(userHasDisliked);
         }
 
         reviews.sort(Comparator.comparing(ReviewDto::getCreatedAt).reversed());

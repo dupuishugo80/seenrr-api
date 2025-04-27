@@ -4,6 +4,12 @@ import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.seenrr.seenrr.dto.ReviewDto;
+import com.seenrr.seenrr.repository.ReviewVoteRepository;
+import com.seenrr.seenrr.service.ReviewVoteService;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.seenrr.seenrr.dto.ReviewDto;
 
@@ -174,8 +180,9 @@ public class User {
 
     public Set<ReviewDto> getReviews() {
         Set<ReviewDto> reviewDtos = new HashSet<>();
-        for(Review review : reviews) {
+        for(Review review : this.reviews) {
             reviewDtos.add(new ReviewDto(
+                review.getId(),
                 review.getReviewText(), 
                 review.getRating(),
                 review.getMedia().getTmdbId(),
@@ -184,7 +191,12 @@ public class User {
                 review.getUser().getUsername(), 
                 review.getMedia().getMediaType(),
                 review.getCreatedAt(), 
-                review.getUpdatedAt()));
+                review.getUpdatedAt(),
+                review.getLikesCount(),
+                review.getDislikesCount(),
+                null,
+                null
+                ));
         }
         return reviewDtos;
     }

@@ -3,6 +3,7 @@ package com.seenrr.seenrr.dto;
 import java.time.LocalDateTime;
 
 public class ReviewDto {
+    private Long id;
     private String reviewText;
     private double rating;
     private Long mediaTmdbId;
@@ -12,8 +13,14 @@ public class ReviewDto {
     private String type;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private int likesCount;
+    private int dislikesCount;
+    private Boolean isLiked;
+    private Boolean isDisliked;
 
-    public ReviewDto(String reviewText, double rating, long mediaTmdbId, long userId, String media, String user, String type,LocalDateTime createdAt, LocalDateTime updatedAt) {
+    public ReviewDto(Long id, String reviewText, double rating, long mediaTmdbId, long userId, String media, String user, String type,
+                    LocalDateTime createdAt, LocalDateTime updatedAt, int likesCount, int dislikesCount, Boolean isLiked, Boolean isDisliked) {
+        this.id = id;
         this.reviewText = reviewText;
         this.rating = rating;
         this.mediaTmdbId = mediaTmdbId;
@@ -23,6 +30,18 @@ public class ReviewDto {
         this.type = type;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.likesCount = likesCount;
+        this.dislikesCount = dislikesCount;
+        this.isLiked = isLiked;
+        this.isDisliked = isDisliked;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 
     public String getMedia() {
@@ -98,5 +117,37 @@ public class ReviewDto {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public int getLikesCount() {
+        return likesCount;
+    }
+
+    public void setLikesCount(int likesCount) {
+        this.likesCount = likesCount;
+    }
+
+    public int getDislikesCount() {
+        return dislikesCount;
+    }
+
+    public void setDislikesCount(int dislikesCount) {
+        this.dislikesCount = dislikesCount;
+    }
+
+    public Boolean getIsLiked() {
+        return isLiked;
+    }
+
+    public void setIsLiked(Boolean isLiked) {
+        this.isLiked = isLiked;
+    }
+
+    public Boolean getIsDisliked() {
+        return isDisliked;
+    }
+
+    public void setIsDisliked(Boolean isDisliked) {
+        this.isDisliked = isDisliked;
     }
 }
