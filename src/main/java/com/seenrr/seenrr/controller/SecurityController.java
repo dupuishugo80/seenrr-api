@@ -1,11 +1,12 @@
 package com.seenrr.seenrr.controller;
 
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,9 +20,12 @@ import com.seenrr.seenrr.dto.ApiResponseDto;
 import com.seenrr.seenrr.dto.Login2FADto;
 import com.seenrr.seenrr.dto.LoginDto;
 import com.seenrr.seenrr.dto.PasswordResetDto;
-import com.seenrr.seenrr.dto.UserDto;
+import com.seenrr.seenrr.dto.PostUserDto;
+import com.seenrr.seenrr.dto.ReviewDto;
 import com.seenrr.seenrr.entity.User;
 import com.seenrr.seenrr.service.UserService;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/security")
@@ -31,7 +35,7 @@ public class SecurityController {
     private UserService userService;
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponseDto> registerUser(@RequestBody UserDto userDto) {
+    public ResponseEntity<ApiResponseDto> registerUser(@RequestBody PostUserDto userDto) {
         return executeAndHandleExceptions(() -> {
             User createdUser;
             try {
@@ -50,9 +54,6 @@ public class SecurityController {
             Map<String, String> userInfo;
             try {
                 userInfo = userService.logUser(LoginDto.getUsername(), LoginDto.getPassword());
-                if (userInfo == null) {
-                    throw new IllegalArgumentException("Nom d'utilisateur ou mot de passe incorrect.");
-                }
                 return new ApiResponseDto(true, "Connexion réussie", userInfo);
             } catch (NoSuchAlgorithmException e) {
                 e.printStackTrace();
@@ -100,7 +101,7 @@ public class SecurityController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<ApiResponseDto> forgotPassword(@RequestBody UserDto user) {
+    public ResponseEntity<ApiResponseDto> forgotPassword(@RequestBody PostUserDto user) {
         return executeAndHandleExceptions(() -> {
             Map<String, String> response = userService.forgotPassword(user.getEmail());
             return new ApiResponseDto(true, "Email de réinitialisation envoyé", response);
@@ -142,7 +143,17 @@ public class SecurityController {
     public ResponseEntity<ApiResponseDto> getUserProfile(@RequestHeader("Authorization") String authHeader) {
         return executeWithTokenAndHandleExceptions(authHeader, token -> {
             User user = userService.getUserProfile(token);
-            return new ApiResponseDto(true, "Profil récupéré avec succès", user);
+            return new ApiResponseDto(true, "", user);
+        });
+    }
+
+    @GetMapping("/get-following-reviews")
+    public ResponseEntity<ApiResponseDto> getFollowingReviews(@RequestHeader("Authorization") String authHeader,
+     @RequestParam(defaultValue = "0") int page,
+     @RequestParam(defaultValue = "15") int size ) {
+        return executeWithTokenAndHandleExceptions(authHeader, token -> {
+            Page<ReviewDto> reviews = userService.getFollowingReviews(token, page, size);
+            return new ApiResponseDto(true, "", reviews);
         });
     }
 
@@ -161,16 +172,16 @@ public class SecurityController {
     }
 
     private <T> ResponseEntity<ApiResponseDto> executeWithTokenAndHandleExceptions(
-        String authHeader, 
-        java.util.function.Function<String, ApiResponseDto> action) {
+            String authHeader, 
+            java.util.function.Function<String, ApiResponseDto> action) {
     
-    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-        return ResponseEntity
-                .status(HttpStatus.UNAUTHORIZED)
-                .body(new ApiResponseDto(false, "Token manquant ou invalide", null));
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(new ApiResponseDto(false, "Token manquant ou invalide", null));
+        }
+        
+        String token = authHeader.substring(7);
+        return executeAndHandleExceptions(() -> action.apply(token));
     }
-    
-    String token = authHeader.substring(7);
-    return executeAndHandleExceptions(() -> action.apply(token));
-}
 }

@@ -1,6 +1,17 @@
 package com.seenrr.seenrr.entity;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+
+import org.springframework.beans.factory.annotation.Autowired;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.seenrr.seenrr.dto.ReviewDto;
+import com.seenrr.seenrr.repository.ReviewVoteRepository;
+import com.seenrr.seenrr.service.ReviewVoteService;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.seenrr.seenrr.dto.ReviewDto;
 
 import jakarta.persistence.*;
 
@@ -17,6 +28,7 @@ public class User {
     @Column(nullable = false, unique = true, length = 100)
     private String email;
 
+    @JsonIgnore
     @Column(nullable = false, length = 100)
     private String password;
 
@@ -26,14 +38,33 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @Column(name = "two_fa_secret")
     private String twoFaSecret;
 
+    @JsonIgnore
     @Column(name = "is_two_fa_enabled")
     private boolean isTwoFaEnabled;
 
+    @JsonIgnore
     @Column(name = "password_reset_token")
     private String passwordResetToken;
+
+    @JsonIgnore
+    @ManyToMany
+    @JoinTable(
+        name = "user_following",
+        joinColumns = @JoinColumn(name = "follower_id"),
+        inverseJoinColumns = @JoinColumn(name = "following_id")
+    )
+    private Set<User> following = new HashSet<>();
+
+    @JsonIgnore
+    @ManyToMany(mappedBy = "following")
+    private Set<User> followers = new HashSet<>();
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<Review> reviews = new HashSet<>();
 
     public User() {}
 
@@ -117,6 +148,14 @@ public class User {
         this.passwordResetToken = passwordResetToken;
     }
 
+    public Set<User> getFollowers() {
+        return followers;
+    }
+
+    public void setFollowers(Set<User> followers) {
+        this.followers = followers;
+    }
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
@@ -138,4 +177,50 @@ public class User {
                 ", updatedAt=" + updatedAt +
                 '}';
     }
+
+    public Set<ReviewDto> getReviews() {
+        Set<ReviewDto> reviewDtos = new HashSet<>();
+        for(Review review : this.reviews) {
+            reviewDtos.add(new ReviewDto(
+                review.getId(),
+                review.getReviewText(), 
+                review.getRating(),
+                review.getMedia().getTmdbId(),
+                review.getUser().getId(),
+                review.getMedia().getTitle(), 
+                review.getUser().getUsername(), 
+                review.getMedia().getMediaType(),
+                review.getCreatedAt(), 
+                review.getUpdatedAt(),
+                review.getLikesCount(),
+                review.getDislikesCount(),
+                null,
+                null
+                ));
+        }
+        return reviewDtos;
+    }
+
+    public void follow(User userToFollow) {
+        if (userToFollow != null && userToFollow != this && !this.following.contains(userToFollow)) {
+            this.following.add(userToFollow);
+            userToFollow.getFollowers().add(this);
+        }
+    }
+
+    public void unfollow(User userToUnfollow) {
+        if (userToUnfollow != null && userToUnfollow != this && this.following.contains(userToUnfollow)) {
+            this.following.remove(userToUnfollow);
+            userToUnfollow.getFollowers().remove(this);
+        }
+    }
+
+    public Set<User> getFollowing() {
+        return following;
+    }
+
+    public void setFollowing(Set<User> following) {
+        this.following = following;
+    }
+
 }
