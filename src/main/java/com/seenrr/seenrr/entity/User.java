@@ -1,7 +1,9 @@
 package com.seenrr.seenrr.entity;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +33,9 @@ public class User {
     @JsonIgnore
     @Column(nullable = false, length = 100)
     private String password;
+
+    @Column(name = "profile_picture_url")
+    private String profilePictureUrl;
 
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -63,6 +68,7 @@ public class User {
     @ManyToMany(mappedBy = "following")
     private Set<User> followers = new HashSet<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<Review> reviews = new HashSet<>();
 
@@ -74,6 +80,7 @@ public class User {
         this.password = password;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        this.profilePictureUrl = "https://cdn-icons-png.flaticon.com/512/219/219986.png";
     }
 
     public Long getId() {
@@ -106,6 +113,14 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getProfilePictureUrl() {
+        return profilePictureUrl;
+    }
+
+    public void setProfilePictureUrl(String profilePictureUrl) {
+        this.profilePictureUrl = profilePictureUrl;
     }
 
     public LocalDateTime getCreatedAt() {
@@ -178,17 +193,18 @@ public class User {
                 '}';
     }
 
-    public Set<ReviewDto> getReviews() {
-        Set<ReviewDto> reviewDtos = new HashSet<>();
+    public List<ReviewDto> getReviews() {
+        List<ReviewDto> reviewDtos = new ArrayList<>();
         for(Review review : this.reviews) {
             reviewDtos.add(new ReviewDto(
                 review.getId(),
                 review.getReviewText(), 
                 review.getRating(),
                 review.getMedia().getTmdbId(),
-                review.getUser().getId(),
+                this.id,
                 review.getMedia().getTitle(), 
-                review.getUser().getUsername(), 
+                this.username, 
+                this.profilePictureUrl,
                 review.getMedia().getMediaType(),
                 review.getCreatedAt(), 
                 review.getUpdatedAt(),
@@ -196,7 +212,7 @@ public class User {
                 review.getDislikesCount(),
                 null,
                 null
-                ));
+            ));
         }
         return reviewDtos;
     }

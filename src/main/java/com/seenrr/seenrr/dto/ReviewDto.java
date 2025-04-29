@@ -10,6 +10,7 @@ public class ReviewDto {
     private Long userId;
     private String media;
     private String user;
+    private String userImage;
     private String type;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
@@ -18,7 +19,7 @@ public class ReviewDto {
     private Boolean isLiked;
     private Boolean isDisliked;
 
-    public ReviewDto(Long id, String reviewText, double rating, long mediaTmdbId, long userId, String media, String user, String type,
+    public ReviewDto(Long id, String reviewText, double rating, long mediaTmdbId, long userId, String media, String user, String userImage, String type,
                     LocalDateTime createdAt, LocalDateTime updatedAt, int likesCount, int dislikesCount, Boolean isLiked, Boolean isDisliked) {
         this.id = id;
         this.reviewText = reviewText;
@@ -27,6 +28,7 @@ public class ReviewDto {
         this.userId = userId;
         this.media = media;
         this.user = user;
+        this.userImage = userImage;
         this.type = type;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
@@ -58,6 +60,14 @@ public class ReviewDto {
 
     public void setUser(String user) {
         this.user = user;
+    }
+
+    public String getUserImage() {
+        return userImage;
+    }
+
+    public void setUserImage(String userImage) {
+        this.userImage = userImage;
     }
 
     public String getType() {

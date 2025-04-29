@@ -250,15 +250,6 @@ public class UserService {
         return user;
     }
 
-    public Set<ReviewDto> getUserReviews(Integer id, String token) {
-        validateToken(token);
-        Set<ReviewDto> reviews = userRepository.findById(id).getReviews();
-        if (reviews == null) {
-            throw new IllegalArgumentException("Aucune critique trouvée pour cet utilisateur.");
-        }
-        return reviews;
-    }
-
     public void followUser(Integer id, String token) {
         validateToken(token);
         User userToFollow = userRepository.findById(id);
@@ -287,6 +278,35 @@ public class UserService {
         }
         loggedUser.unfollow(userToUnfollow);
         userRepository.save(loggedUser);
+    }
+
+    public Page<ReviewDto> getUserReviews(Integer id, String token, int page, int size) {
+        validateToken(token);
+        User choosenUser = userRepository.findById(id);
+        if (choosenUser == null) {
+            throw new IllegalArgumentException("Utilisateur introuvable.");
+        }
+        List<ReviewDto> reviews = userRepository.findById(id).getReviews();
+        if (reviews == null) {
+            throw new IllegalArgumentException("Aucune critique trouvée pour cet utilisateur.");
+        }
+
+        for (ReviewDto review : reviews) {
+            Optional<Review> loadedReview = reviewRepository.findById(review.getId());
+            Boolean userHasLiked = reviewVoteRepository.existsByReviewAndUserAndVoteType(loadedReview.get(), choosenUser, ReviewVote.VoteType.LIKE);
+            Boolean userHasDisliked = reviewVoteRepository.existsByReviewAndUserAndVoteType(loadedReview.get(), choosenUser, ReviewVote.VoteType.DISLIKE);
+            review.setIsLiked(userHasLiked);
+            review.setIsDisliked(userHasDisliked);
+        }
+
+        reviews.sort(Comparator.comparing(ReviewDto::getCreatedAt).reversed());
+
+        int start = Math.min(page * size, reviews.size());
+        int end = Math.min(start + size, reviews.size());
+
+        List<ReviewDto> pagedList = reviews.subList(start, end);
+
+        return new PageImpl<>(pagedList, PageRequest.of(page, size), reviews.size());
     }
 
     public Page<ReviewDto> getFollowingReviews(String token, int page, int size) {

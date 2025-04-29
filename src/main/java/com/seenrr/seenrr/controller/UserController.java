@@ -1,6 +1,7 @@
 package com.seenrr.seenrr.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.seenrr.seenrr.dto.ApiResponseDto;
@@ -12,6 +13,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -34,9 +36,11 @@ public class UserController {
     }
 
     @GetMapping("/{id}/reviews")
-    public ResponseEntity<ApiResponseDto> getUserReviews(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id) {
+    public ResponseEntity<ApiResponseDto> getUserReviews(@RequestHeader("Authorization") String authHeader, @PathVariable("id") Integer id,
+    @RequestParam(defaultValue = "0") int page,
+     @RequestParam(defaultValue = "15") int size) {
         return executeWithTokenAndHandleExceptions(authHeader, token -> {
-            Set<ReviewDto> reviews = userService.getUserReviews(id, token);
+            Page<ReviewDto> reviews = userService.getUserReviews(id, token, page, size);
             return new ApiResponseDto(true, "", reviews);
         });
     }
